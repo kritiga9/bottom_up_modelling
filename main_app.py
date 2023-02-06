@@ -3,12 +3,10 @@ import pandas as pd
 #import streamlit-keboola-api as kb
 import os
 from io import StringIO
-from st_aggrid import AgGrid, GridUpdateMode, DataReturnMode
-from st_aggrid.grid_options_builder import GridOptionsBuilder
-from st_aggrid.shared import ColumnsAutoSizeMode
-import matplotlib.pyplot as plt
+#from st_aggrid import AgGrid, GridUpdateMode, DataReturnMode
+#from st_aggrid.grid_options_builder import GridOptionsBuilder
+#from st_aggrid.shared import ColumnsAutoSizeMode
 import numpy as np
-import seaborn as sns
 #import cred
 
 client = Client(st.secrets.url, st.secrets.key) 
