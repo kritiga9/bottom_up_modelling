@@ -3,7 +3,6 @@ import pandas as pd
 import streamlit_keboola_api.src.keboola_api as kb
 import os
 from io import StringIO
-from kbcstorage.client import Client
 from st_aggrid import AgGrid, GridUpdateMode, DataReturnMode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import ColumnsAutoSizeMode
