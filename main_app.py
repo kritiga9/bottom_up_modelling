@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import streamlit_keboola_api as kb
+#import streamlit-keboola-api as kb
 import os
 from io import StringIO
 from st_aggrid import AgGrid, GridUpdateMode, DataReturnMode
