@@ -1,4 +1,3 @@
-streamlit==1.14.0
 streamlit-aggrid==0.3.3
 streamlit-keboola-api==0.2.0
 pandas==1.5.1
