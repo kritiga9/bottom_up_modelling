@@ -1,0 +1,11 @@
+streamlit
+streamlit-aggrid
+streamlit-keboola-api
+pandas==1.5.1
+matplotlib==3.6.2
+seaborn==0.12.1
+numpy==1.23.4
+git+https://github.com/keboola/sapi-python-client.git
+duckdb==0.6.1
+plotly-express==0.4.1
+
