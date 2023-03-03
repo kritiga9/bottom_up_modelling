@@ -52,7 +52,7 @@ if version_selection == "New Scenario":
 else:
     otherOption = st.text_input("Rename to save as new",value = version_selection,key="new_scenario")
 
-st.button("Calculate Results", key="calculate_result")
+#st.button("Calculate Results", key="calculate_result")
 
 
 tab1,tab2,tab3,tab4,tab5,tab6, tab7 = st.tabs(["Newsletters","Marketing Spend","Conversion Rates","COGS","P&L","Results", "Save"])
@@ -94,6 +94,8 @@ with tab1:
     if save_state_t1:
         newsletter_tmp.loc[newsletter_tmp.index.isin(df.index), ['NEWSLETTERS_SENT']]= df['NEWSLETTERS_SENT'] 
         newsletter_tmp.loc[newsletter_tmp.index.isin(df.index), ['SENT_TO_PDV_RATE']]= df['SENT_TO_PDV_RATE']
+
+
 
 
 with tab2:
@@ -266,145 +268,141 @@ with tab5:
         pnl_tmp.loc[pnl_tmp.index.isin(df.index), ['BONUS_EUR_AS_PCT_COGS']]= df[['BONUS_EUR_AS_PCT_COGS']] 
 
 
-if st.session_state.calculate_result:
-    with tab6:
-        SI_NEWSLETTERS_TMP = newsletter_tmp
-        SI_MARKETING_SPEND_TMP =marketing_spend_tmp
-        WEB_ANALYTICS_TMP = web_analytics
-        SI_COGS_PER_PIECE_TMP = cogs_tmp
-        SI_CONVERSION_RATES_TMP = conversion_rates_tmp
-        SI_PNL_TMP = pnl_tmp
 
 
-        df_result =(duckdb.query("""
-    
-    WITH WEB_TRAFFIC AS (
-    SELECT VERSION,
-        WEEK, 
-        BRAND,
-        CATEGORY,
-        SOURCE, 
-        NEWSLETTERS_SENT,
-        NEWSLETTERS_SENT* (SENT_TO_PDV_RATE_NL_ONLY + NL_TO_WA_BALANCING_FIGURE) AS PRODUCT_DETAIL_VIEWS
-    FROM SI_NEWSLETTERS_TMP
-    
-    UNION ALL
-        
-    SELECT VERSION,
-        WEEK,
-        BRAND,
-        CATEGORY,
-        SOURCE,
-        0 AS NEWSLETTERS_SENT,
-        SPEND_EUR / COST_PER_CLICK_EUR AS PRODUCT_DETAIL_VIEWS
-        FROM SI_MARKETING_SPEND_TMP
-    
-        
-    UNION ALL 
 
-        SELECT
-   
-      'ANY' AS VERSION,
-        WEEK,
-        BRAND,
-        CATEGORY,
-        SOURCE_CHANNEL AS SOURCE,
-        0 AS NEWSLETTERS_SENT,
-        SUM(PRODUCT_DETAIL_VIEWS) AS PRODUCT_DETAIL_VIEWS
-        FROM "WEB_ANALYTICS_TMP"
-        WHERE SOURCE = 'SEARCH' AND YEAR = 4
-        GROUP BY VERSION, WEEK, BRAND,CATEGORY,SOURCE     
-    ),
+with tab6:
+    SI_NEWSLETTERS_TMP = newsletter_tmp
+    SI_MARKETING_SPEND_TMP =marketing_spend_tmp
+    WEB_ANALYTICS_TMP = web_analytics
+    SI_COGS_PER_PIECE_TMP = cogs_tmp
+    SI_CONVERSION_RATES_TMP = conversion_rates_tmp
+    SI_PNL_TMP = pnl_tmp
+    df_result =(duckdb.query("""
+
+WITH WEB_TRAFFIC AS (
+SELECT VERSION,
+    WEEK, 
+    BRAND,
+    CATEGORY,
+    SOURCE, 
+    NEWSLETTERS_SENT,
+    NEWSLETTERS_SENT* (SENT_TO_PDV_RATE_NL_ONLY + NL_TO_WA_BALANCING_FIGURE) AS PRODUCT_DETAIL_VIEWS
+FROM SI_NEWSLETTERS_TMP
+
+UNION ALL
     
-    COGS AS (
-    SELECT 
-    VERSION,
+SELECT VERSION,
     WEEK,
     BRAND,
     CATEGORY,
     SOURCE,
-    SUM(COGS_PER_PIECE_EUR * WEIGHT_BY_PIECES_SOLD) AS COGS_PER_PIECE
-    FROM "SI_COGS_PER_PIECE_TMP"
-    GROUP BY
-    VERSION,
+    0 AS NEWSLETTERS_SENT,
+    SPEND_EUR / COST_PER_CLICK_EUR AS PRODUCT_DETAIL_VIEWS
+    FROM SI_MARKETING_SPEND_TMP
+
+    
+UNION ALL 
+    SELECT
+
+    'ANY' AS VERSION,
     WEEK,
     BRAND,
     CATEGORY,
-    SOURCE)
+    SOURCE_CHANNEL AS SOURCE,
+    0 AS NEWSLETTERS_SENT,
+    SUM(PRODUCT_DETAIL_VIEWS) AS PRODUCT_DETAIL_VIEWS
+    FROM "WEB_ANALYTICS_TMP"
+    WHERE SOURCE = 'SEARCH' AND YEAR = 4
+    GROUP BY VERSION, WEEK, BRAND,CATEGORY,SOURCE     
+),
 
-    
-    SELECT
-    WT.VERSION,
-    WT.WEEK,
-    WT.BRAND,
-    WT.CATEGORY,
-    WT.SOURCE,
-    WT.PRODUCT_DETAIL_VIEWS AS PRODUCT_DETAIL_VIEWS,
-    MS.SPEND_EUR AS MARKETING_SPEND,
-    WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE AS PIECES_SOLD,
-    (WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE) * PNL.PRICE_PER_PIECE_EUR AS REVENUE_EUR,
-    (WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE) * COGS.COGS_PER_PIECE AS COGS_EUR,
-    (WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE) * PNL.EUR_BONUS_PER_PIECE AS EUR_BONUS_PER_PIECE,
-    ((WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE) * COGS.COGS_PER_PIECE)*PNL.BONUS_EUR_AS_PCT_COGS AS BONUS_EUR_AS_PCT_COGS
-    
-    
-    FROM WEB_TRAFFIC AS WT
-    LEFT JOIN SI_MARKETING_SPEND_TMP AS MS ON WT.VERSION = MS.VERSION AND WT.WEEK = MS.WEEK AND WT.BRAND = MS.BRAND AND WT.CATEGORY = MS.CATEGORY AND WT.SOURCE = MS.SOURCE 
-    LEFT JOIN SI_CONVERSION_RATES_TMP AS CR ON WT.VERSION = CR.VERSION AND WT.WEEK = CR.WEEK AND WT.BRAND = CR.BRAND AND WT.CATEGORY = CR.CATEGORY AND WT.SOURCE = CR.SOURCE
-    LEFT JOIN SI_PNL_TMP AS PNL ON WT.VERSION = PNL.VERSION AND WT.WEEK = PNL.WEEK AND WT.BRAND = PNL.BRAND AND WT.CATEGORY = PNL.CATEGORY AND WT.SOURCE = PNL.SOURCE 
+COGS AS (
+SELECT 
+VERSION,
+WEEK,
+BRAND,
+CATEGORY,
+SOURCE,
+SUM(COGS_PER_PIECE_EUR * WEIGHT_BY_PIECES_SOLD) AS COGS_PER_PIECE
+FROM "SI_COGS_PER_PIECE_TMP"
+GROUP BY
+VERSION,
+WEEK,
+BRAND,
+CATEGORY,
+SOURCE)
 
-    LEFT JOIN COGS ON WT.VERSION = COGS.VERSION AND WT.WEEK = COGS.WEEK AND WT.BRAND = COGS.BRAND AND WT.CATEGORY = COGS.CATEGORY AND WT.SOURCE = COGS.SOURCE 
-
-    """ ).to_df())
-
-        if version_selection == "New Scenario":
-            df_result["VERSION"] = otherOption
-        else :
-            df_result["VERSION"] = version_selection
-
-        df_agg = pd.DataFrame(df_result.sum(numeric_only=True)).T.drop(columns=["WEEK"])
-        df_agg["VERSION"] = df_result["VERSION"].unique()
-        lfl = lfl[lfl["VERSION"]=="LFL"]
-        lfl_agg = pd.DataFrame(lfl.sum(numeric_only=True)).T.drop(columns=["ROW_COUNT","GROSS_MARGIN_3"])
-        lfl_agg["VERSION"] = 'LFL'
-        df_final = pd.concat([lfl_agg,df_agg])
-        df_final = df_final[["VERSION","PRODUCT_DETAIL_VIEWS","MARKETING_SPEND","PIECES_SOLD","REVENUE_EUR","COGS_EUR","EUR_BONUS_PER_PIECE","BONUS_EUR_AS_PCT_COGS"]]
-        df_final[["PRODUCT_DETAIL_VIEWS","MARKETING_SPEND","PIECES_SOLD","REVENUE_EUR","COGS_EUR","EUR_BONUS_PER_PIECE","BONUS_EUR_AS_PCT_COGS"]] =         df_final[["PRODUCT_DETAIL_VIEWS","MARKETING_SPEND","PIECES_SOLD","REVENUE_EUR","COGS_EUR","EUR_BONUS_PER_PIECE","BONUS_EUR_AS_PCT_COGS"]].astype(int)
-        df_final["GROSS_MARGIN_1"] = df_final["REVENUE_EUR"] - df_final["COGS_EUR"]
-        df_final["GROSS_MARGIN_2"] = df_final["GROSS_MARGIN_1"] + df_final["EUR_BONUS_PER_PIECE"] + df_final["BONUS_EUR_AS_PCT_COGS"]
-        df_final["GROSS_MARGIN_3"] = df_final["GROSS_MARGIN_2"] - df_final["MARKETING_SPEND"]
-        st.write(df_final)
+SELECT
+WT.VERSION,
+WT.WEEK,
+WT.BRAND,
+WT.CATEGORY,
+WT.SOURCE,
+WT.PRODUCT_DETAIL_VIEWS AS PRODUCT_DETAIL_VIEWS,
+MS.SPEND_EUR AS MARKETING_SPEND,
+WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE AS PIECES_SOLD,
+(WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE) * PNL.PRICE_PER_PIECE_EUR AS REVENUE_EUR,
+(WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE) * COGS.COGS_PER_PIECE AS COGS_EUR,
+(WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE) * PNL.EUR_BONUS_PER_PIECE AS EUR_BONUS_PER_PIECE,
+((WT.PRODUCT_DETAIL_VIEWS * CR.PURCHASE_TO_PDV_RATE) * COGS.COGS_PER_PIECE)*PNL.BONUS_EUR_AS_PCT_COGS AS BONUS_EUR_AS_PCT_COGS
 
 
-        #Plot of the difference between LFL model and the selected one
-        fig_df = pd.DataFrame(df_final._get_numeric_data().diff()[-1:].T.reset_index())
-        fig_df = fig_df.rename(columns={ fig_df.columns[0]: "Metrics", fig_df.columns[1] : "Values" })
-        fig=px.bar(fig_df,x='Values',y='Metrics', orientation='h')
-        st.write(fig)
+FROM WEB_TRAFFIC AS WT
+LEFT JOIN SI_MARKETING_SPEND_TMP AS MS ON WT.VERSION = MS.VERSION AND WT.WEEK = MS.WEEK AND WT.BRAND = MS.BRAND AND WT.CATEGORY = MS.CATEGORY AND WT.SOURCE = MS.SOURCE 
+LEFT JOIN SI_CONVERSION_RATES_TMP AS CR ON WT.VERSION = CR.VERSION AND WT.WEEK = CR.WEEK AND WT.BRAND = CR.BRAND AND WT.CATEGORY = CR.CATEGORY AND WT.SOURCE = CR.SOURCE
+LEFT JOIN SI_PNL_TMP AS PNL ON WT.VERSION = PNL.VERSION AND WT.WEEK = PNL.WEEK AND WT.BRAND = PNL.BRAND AND WT.CATEGORY = PNL.CATEGORY AND WT.SOURCE = PNL.SOURCE 
+LEFT JOIN COGS ON WT.VERSION = COGS.VERSION AND WT.WEEK = COGS.WEEK AND WT.BRAND = COGS.BRAND AND WT.CATEGORY = COGS.CATEGORY AND WT.SOURCE = COGS.SOURCE 
+""" ).to_df())
+
+    if version_selection == "New Scenario":
+        df_result["VERSION"] = otherOption
+    else :
+        df_result["VERSION"] = version_selection
+
+    df_agg = pd.DataFrame(df_result.sum(numeric_only=True)).T.drop(columns=["WEEK"])
+    df_agg["VERSION"] = df_result["VERSION"].unique()
+    lfl = lfl[lfl["VERSION"]=="LFL"]
+    lfl_agg = pd.DataFrame(lfl.sum(numeric_only=True)).T.drop(columns=["ROW_COUNT","GROSS_MARGIN_3"])
+    lfl_agg["VERSION"] = 'LFL'
+    df_final = pd.concat([lfl_agg,df_agg])
+    df_final = df_final[["VERSION","PRODUCT_DETAIL_VIEWS","MARKETING_SPEND","PIECES_SOLD","REVENUE_EUR","COGS_EUR","EUR_BONUS_PER_PIECE","BONUS_EUR_AS_PCT_COGS"]]
+    df_final[["PRODUCT_DETAIL_VIEWS","MARKETING_SPEND","PIECES_SOLD","REVENUE_EUR","COGS_EUR","EUR_BONUS_PER_PIECE","BONUS_EUR_AS_PCT_COGS"]] =         df_final[["PRODUCT_DETAIL_VIEWS","MARKETING_SPEND","PIECES_SOLD","REVENUE_EUR","COGS_EUR","EUR_BONUS_PER_PIECE","BONUS_EUR_AS_PCT_COGS"]].astype(int)
+    df_final["GROSS_MARGIN_1"] = df_final["REVENUE_EUR"] - df_final["COGS_EUR"]
+    df_final["GROSS_MARGIN_2"] = df_final["GROSS_MARGIN_1"] + df_final["EUR_BONUS_PER_PIECE"] + df_final["BONUS_EUR_AS_PCT_COGS"]
+    df_final["GROSS_MARGIN_3"] = df_final["GROSS_MARGIN_2"] - df_final["MARKETING_SPEND"]
+    st.write(df_final)
 
 
-        #Plot of the  % difference between LFL model and the selected one
-        fig_df = pd.DataFrame(df_final._get_numeric_data().pct_change()[-1:].T.reset_index())
-        fig_df = fig_df.rename(columns={ fig_df.columns[0]: "Metrics", fig_df.columns[1] : "Values" })
-        fig=px.bar(fig_df,x='Values',y='Metrics', orientation='h')
-        st.write(fig)
+    #Plot of the difference between LFL model and the selected one
+    fig_df = pd.DataFrame(df_final._get_numeric_data().diff()[-1:].T.reset_index())
+    fig_df = fig_df.rename(columns={ fig_df.columns[0]: "Metrics", fig_df.columns[1] : "Values" })
+    fig=px.bar(fig_df,x='Values',y='Metrics', orientation='h')
+    st.write(fig)
+
+
+    #Plot of the  % difference between LFL model and the selected one
+    fig_df = pd.DataFrame(df_final._get_numeric_data().pct_change()[-1:].T.reset_index())
+    fig_df = fig_df.rename(columns={ fig_df.columns[0]: "Metrics", fig_df.columns[1] : "Values" })
+    fig=px.bar(fig_df,x='Values',y='Metrics', orientation='h')
+    st.write(fig)
 
 
 
-        @st.experimental_memo
-        def convert_df(df):
-            return df.to_csv(index=False).encode('utf-8')
+    @st.experimental_memo
+    def convert_df(df):
+        return df.to_csv(index=False).encode('utf-8')
 
 
-        csv = convert_df(df_result)
+    csv = convert_df(df_result)
 
-        st.download_button(
-        "Press to Download",
-        csv,
-        "file.csv",
-        "text/csv",
-        key='download-csv'
-        )
+    st.download_button(
+    "Press to Download",
+    csv,
+    "file.csv",
+    "text/csv",
+    key='download-csv'
+    )
 
 
 
@@ -432,7 +430,3 @@ with tab7:
                         )
             value
             key_value +="one"
-
-
-
-
