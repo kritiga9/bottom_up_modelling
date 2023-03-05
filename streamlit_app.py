@@ -79,7 +79,7 @@ with tab1:
 
 
      ## AW: Loading to state so we can return to it after rerun.
-    #check_and_set_state('newsletter_tmp',newsletter_tmp)
+    check_and_set_state('newsletter_tmp',newsletter_tmp)
     #newsletter_ss = st.session_state['newsletter_tmp']
 
     column_1,column_2,column_3 = st.columns(3)
@@ -124,7 +124,7 @@ with tab2:
         marketing_spend_tmp = marketing_spend_tmp[marketing_spend_tmp["VERSION"]==version_selection]
 
     ## Loading to state so we can return to it after rerun.
-    #check_and_set_state('marketing_spend_tmp',marketing_spend_tmp)
+    check_and_set_state('marketing_spend_tmp',marketing_spend_tmp)
     #marketing_spend_ss = st.session_state['marketing_spend_tmp']
     
     column_4,column_5,column_6 = st.columns(3)
@@ -176,7 +176,7 @@ with tab3:
 
     ## AW: Loading to state so we can return to it after rerun.
     check_and_set_state('conversion_rates_tmp',conversion_rates_tmp)
-    conversion_rates_ss = st.session_state['conversion_rates_tmp']
+    #conversion_rates_ss = st.session_state['conversion_rates_tmp']
         
     column_7,column_8,column_9 = st.columns(3)
 
@@ -216,7 +216,7 @@ with tab4:
 
     ## AW: Loading to state so we can return to it after rerun.
     check_and_set_state('cogs_tmp',cogs_tmp)
-    cogs_ss = st.session_state['cogs_tmp']
+    #cogs_ss = st.session_state['cogs_tmp']
     
     column_10,column_11,column_12 = st.columns(3)
 
@@ -260,7 +260,7 @@ with tab5:
     
     ## AW: Loading to state so we can return to it after rerun.
     check_and_set_state('pnl_tmp',pnl_tmp)
-    pnl_ss = st.session_state['pnl_tmp']
+    #pnl_ss = st.session_state['pnl_tmp']
     
     
     column_13,column_14,column_15 = st.columns(3)
