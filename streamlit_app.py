@@ -40,7 +40,6 @@ web_analytics = read_df('out.c-ACME_DATASET.15_WEB_ANALYTICS')
 lfl = read_df('out.c-ACME_BUM_SCENARIO_RESULTS.BUM_IS_FINAL_REASONABLE')
 
 
-
 versions = [f"{i}" for i in (newsletter[~newsletter["VERSION"].isin(["LFL","FINAL"])]["VERSION"].unique())] + [f"{i}" for i in (marketing_spend[~marketing_spend["VERSION"].isin(["LFL","FINAL"])]["VERSION"].unique())] + ["New Scenario"]
 
 
@@ -57,6 +56,11 @@ else:
 
 tab1,tab2,tab3,tab4,tab5,tab6, tab7 = st.tabs(["Newsletters","Marketing Spend","Conversion Rates","COGS","P&L","Results", "Save"])
 
+## AW: just to make it sligthly more reusable. Checks if key is loaded. If not it creates the key and add value to it.
+def check_and_set_state(ss_key,value):
+    if ss_key not in st.session_state:
+        st.session_state[ss_key] = value
+
 with tab1:
     newsletter_tmp = newsletter.copy()
     category_t1 = newsletter["CATEGORY"].unique() 
@@ -69,7 +73,14 @@ with tab1:
 
     else:
         df = newsletter[newsletter["VERSION"]==version_selection]
-        newsletter_tmp = newsletter_tmp[newsletter_tmp["VERSION"]=='LFL']
+        ## AW: here was an error: changed LFL to "version_selection"
+        newsletter_tmp = newsletter_tmp[newsletter_tmp["VERSION"]==version_selection]
+
+
+
+     ## AW: Loading to state so we can return to it after rerun.
+    #check_and_set_state('newsletter_tmp',newsletter_tmp)
+    #newsletter_ss = st.session_state['newsletter_tmp']
 
     column_1,column_2,column_3 = st.columns(3)
 
@@ -82,7 +93,6 @@ with tab1:
     with column_3:
         category_selection_t1 = st.multiselect("Category",category_t1,category_t1)
     
-
     tab_11 = st.slider("Newsletters Sent",-100,100,0)
     tab_12 = st.slider("Sent to PDV Rate",-100,100,0)
     df["NEWSLETTERS_SENT"] = df["NEWSLETTERS_SENT"]*(1 + tab_11/100)     
@@ -92,14 +102,15 @@ with tab1:
     st.write(df[["WEEK","BRAND","CATEGORY","SOURCE","NEWSLETTERS_SENT","SENT_TO_PDV_RATE"]])
     save_state_t1 = st.button("Save filters")
     if save_state_t1:
+            ## AW: Writing back to state
         newsletter_tmp.loc[newsletter_tmp.index.isin(df.index), ['NEWSLETTERS_SENT']]= df['NEWSLETTERS_SENT'] 
         newsletter_tmp.loc[newsletter_tmp.index.isin(df.index), ['SENT_TO_PDV_RATE']]= df['SENT_TO_PDV_RATE']
-
+        st.session_state['newsletter_tmp'] = newsletter_tmp
 
 
 
 with tab2:
-    marketing_spend_tmp = marketing_spend.copy()
+    marketing_spend_tmp = marketing_spend.copy() 
     category_t2 = marketing_spend["CATEGORY"].unique() 
     brand_t2 = marketing_spend["BRAND"].unique()
     source_t2= marketing_spend["SOURCE"].unique()
@@ -112,6 +123,9 @@ with tab2:
         df = marketing_spend[marketing_spend["VERSION"]==version_selection]
         marketing_spend_tmp = marketing_spend_tmp[marketing_spend_tmp["VERSION"]==version_selection]
 
+    ## Loading to state so we can return to it after rerun.
+    #check_and_set_state('marketing_spend_tmp',marketing_spend_tmp)
+    #marketing_spend_ss = st.session_state['marketing_spend_tmp']
     
     column_4,column_5,column_6 = st.columns(3)
 
@@ -138,9 +152,10 @@ with tab2:
     st.write(df.loc[:, ~df.columns.isin(['VERSION'])])
     save_state_t2 = st.button("Save filters ")
     if save_state_t2:
+        ## AW: Writing back to state
         marketing_spend_tmp.loc[marketing_spend_tmp.index.isin(df.index), ['SPEND_EUR']]= df[['SPEND_EUR']] 
         marketing_spend_tmp.loc[marketing_spend_tmp.index.isin(df.index), ['COST_PER_CLICK_EUR']]= df[['COST_PER_CLICK_EUR']] 
-        marketing_spend_tmp.loc[marketing_spend_tmp.index.isin(df.index), ['SPEND_EUR']]= df[['SPEND_EUR']] 
+        st.session_state['marketing_spend_tmp'] = marketing_spend_tmp
 
     
      
@@ -158,6 +173,10 @@ with tab3:
     else:
         df = conversion_rates[conversion_rates["VERSION"]==version_selection]
         conversion_rates_tmp = conversion_rates_tmp[conversion_rates_tmp["VERSION"]==version_selection]
+
+    ## AW: Loading to state so we can return to it after rerun.
+    check_and_set_state('conversion_rates_tmp',conversion_rates_tmp)
+    conversion_rates_ss = st.session_state['conversion_rates_tmp']
         
     column_7,column_8,column_9 = st.columns(3)
 
@@ -179,8 +198,9 @@ with tab3:
     st.write(df.loc[:, ~df.columns.isin(['VERSION'])])   
     save_state_t3 = st.button("Save filters.")
     if save_state_t3:
+        ## AW: Writing back to state
         conversion_rates_tmp.loc[conversion_rates_tmp.index.isin(df.index), ['PURCHASE_TO_PDV_RATE']]= df[['PURCHASE_TO_PDV_RATE']] 
-  
+        st.session_state['conversion_rates_tmp'] = conversion_rates_tmp
 
 with tab4:    
     cogs_tmp = cogs.copy() 
@@ -194,7 +214,10 @@ with tab4:
         df = cogs[cogs["VERSION"]==version_selection]
         cogs_tmp = cogs_tmp[cogs_tmp["VERSION"]==version_selection]
 
-        
+    ## AW: Loading to state so we can return to it after rerun.
+    check_and_set_state('cogs_tmp',cogs_tmp)
+    cogs_ss = st.session_state['cogs_tmp']
+    
     column_10,column_11,column_12 = st.columns(3)
 
     with column_10:
@@ -216,7 +239,9 @@ with tab4:
     st.write(df[["WEEK","BRAND","CATEGORY","SOURCE","SKU_NAME","COGS_PER_PIECE_EUR","WEIGHT_BY_PIECES_SOLD"]])
     save_state_t4 = st.button("Save Filter")
     if save_state_t4:
+        # AW: writing back to state
         cogs_tmp.loc[cogs_tmp.index.isin(df.index), ['COGS_PER_PIECE_EUR']]= df[['COGS_PER_PIECE_EUR']] 
+        st.session_state['cogs_tmp'] = cogs_tmp
 
 
 
@@ -232,6 +257,10 @@ with tab5:
     else:
         df = pnl[pnl["VERSION"]==version_selection]
         pnl_tmp = pnl_tmp[pnl_tmp["VERSION"]==version_selection]
+    
+    ## AW: Loading to state so we can return to it after rerun.
+    check_and_set_state('pnl_tmp',pnl_tmp)
+    pnl_ss = st.session_state['pnl_tmp']
     
     
     column_13,column_14,column_15 = st.columns(3)
@@ -263,21 +292,24 @@ with tab5:
     st.write(df.loc[:, ~df.columns.isin(['VERSION'])])
     save_state_t5 = st.button("Save Filter.")
     if save_state_t5:
+        # AW: writing back to state
         pnl_tmp.loc[pnl_tmp.index.isin(df.index), ['PRICE_PER_PIECE_EUR']]= df[['PRICE_PER_PIECE_EUR']] 
         pnl_tmp.loc[pnl_tmp.index.isin(df.index), ['EUR_BONUS_PER_PIECE']]= df[['EUR_BONUS_PER_PIECE']] 
         pnl_tmp.loc[pnl_tmp.index.isin(df.index), ['BONUS_EUR_AS_PCT_COGS']]= df[['BONUS_EUR_AS_PCT_COGS']] 
+        st.session_state['pnl_tmp'] = pnl_tmp
 
 
 
 
 
 with tab6:
-    SI_NEWSLETTERS_TMP = newsletter_tmp
-    SI_MARKETING_SPEND_TMP =marketing_spend_tmp
+    # AW: reading from state
+    SI_NEWSLETTERS_TMP = st.session_state['newsletter_tmp']
+    SI_MARKETING_SPEND_TMP =st.session_state['marketing_spend_tmp']
     WEB_ANALYTICS_TMP = web_analytics
-    SI_COGS_PER_PIECE_TMP = cogs_tmp
-    SI_CONVERSION_RATES_TMP = conversion_rates_tmp
-    SI_PNL_TMP = pnl_tmp
+    SI_COGS_PER_PIECE_TMP = st.session_state['cogs_tmp']
+    SI_CONVERSION_RATES_TMP = st.session_state['conversion_rates_tmp']
+    SI_PNL_TMP = st.session_state['pnl_tmp']
     df_result =(duckdb.query("""
 
 WITH WEB_TRAFFIC AS (
