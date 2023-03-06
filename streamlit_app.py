@@ -40,7 +40,7 @@ web_analytics = read_df('out.c-ACME_DATASET.15_WEB_ANALYTICS')
 lfl = read_df('out.c-ACME_BUM_SCENARIO_RESULTS.BUM_IS_FINAL_REASONABLE')
 
 
-versions = [f"{i}" for i in (newsletter[~newsletter["VERSION"].isin(["LFL","FINAL"])]["VERSION"].unique())] + [f"{i}" for i in (marketing_spend[~marketing_spend["VERSION"].isin(["LFL","FINAL"])]["VERSION"].unique())] + ["New Scenario"]
+versions =   ["New Scenario"] + [f"{i}" for i in (newsletter[~newsletter["VERSION"].isin(["LFL","FINAL"])]["VERSION"].unique())] + [f"{i}" for i in (marketing_spend[~marketing_spend["VERSION"].isin(["LFL","FINAL"])]["VERSION"].unique())]
 
 
 version_selection = st.selectbox("Select option", options=versions, key="version_selection")
@@ -319,7 +319,7 @@ SELECT VERSION,
     CATEGORY,
     SOURCE, 
     NEWSLETTERS_SENT,
-    NEWSLETTERS_SENT* (SENT_TO_PDV_RATE_NL_ONLY + NL_TO_WA_BALANCING_FIGURE) AS PRODUCT_DETAIL_VIEWS
+    NEWSLETTERS_SENT* (SENT_TO_PDV_RATE) AS PRODUCT_DETAIL_VIEWS 
 FROM SI_NEWSLETTERS_TMP
 
 UNION ALL
