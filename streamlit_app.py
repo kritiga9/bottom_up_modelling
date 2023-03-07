@@ -12,7 +12,7 @@ st.set_page_config(layout="wide")
 
 client = Client(st.secrets.kbc_url, st.secrets.kbc_token) 
 
-@st.experimental_memo(ttl=7200)
+@st.cache
 def read_df(table_id, index_col=None, date_col=None):
     client.tables.export_to_file(table_id, '.')
     table_name = table_id.split(".")[-1]
@@ -421,7 +421,7 @@ LEFT JOIN COGS ON WT.VERSION = COGS.VERSION AND WT.WEEK = COGS.WEEK AND WT.BRAND
 
 
 
-    @st.experimental_memo
+    @st.cache
     def convert_df(df):
         return df.to_csv(index=False).encode('utf-8')
 
